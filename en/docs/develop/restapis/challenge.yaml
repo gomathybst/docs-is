@@ -1,446 +1,168 @@
-swagger: '2.0'
+openapi: "3.0.1"
 info:
-  description: This is the RESTful API for managing challenge questions and answers of a user in WSO2 Identity Server
-  version: "v1"
-  title: WSO2 Identity Server - User's Challenge Questions and Answers API Definition.
-  contact:
-    name: "WSO2 Identity Server"
-    url: "https://wso2.com/identity-and-access-management/"
-    email: "architecture@wso2.com"
-  license:
-    name: Apache 2.0
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
-
-schemes:
- - https
-
-# Tags are used for organizing operations
-tags:
-- name: me
-  description: Operations for the authenticated user.
-
-# Applicable authentication mechanisms
-security:
-  - OAuth2: []
-  - BasicAuth: []
-
+  title: "be-entity-app-staging"
+  version: "1.0"
+servers:
+- url: "https://yd89jp4mk3.execute-api.eu-west-1.amazonaws.com/{basePath}"
+  variables:
+    basePath:
+      default: "/staging"
 paths:
-  /me/challenges:
+  /documents/{entity_id}:
     get:
-      tags:
-        - me
-      summary: Retrieve challenges available for the authenticated user.
-      operationId: getChallengesForLoggedInUser
-      description: |
-        Retrieves the available challenges in the system for the authenticated user. In the response, challenge questions are grouped as **challenge sets**.
-
-        <b>Permission required:</b>
-         * /permission/admin/login
       parameters:
-        - $ref: '#/parameters/limitQueryParam'
-        - $ref: '#/parameters/offsetQueryParam'
-      responses:
-        200:
-          description: All the available challenges in the system that can be answered by the user.
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/ChallengeSet'
-        400:
-          $ref: '#/responses/InvalidInput'
-        403:
-          $ref: '#/responses/Forbidden'
-        401:
-          $ref: '#/responses/Unauthorized'
-        500:
-          $ref: '#/responses/ServerError'
-  /me/challenge-answers:
-    post:
-      tags:
-        - me
-      summary: Answer to a collection of new challenges.
-      operationId: addChallengeAnswersForLoggedInUser
-      description: |
-        Provide answer(s) to one or more candidate challenge question set(s) available in the system for the authenticated user. A user can pick at maximum one question from each set to answer. A user may answer **one or more distinct** challenge question **set(s)**.
-
-        <b>Permission required:</b>
-         * /permission/admin/login
+      - name: "entity_id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:606438480380:function:be-entity-app-staging-Documents-1P1D84XI2H36Z/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+    options:
       parameters:
-        - in: body
-          name: challengeAnswer
-          description: One or more challenge(s) with the answer.
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/ChallengeAnswer'
+      - name: "entity_id"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
       responses:
-        201:
-          $ref: '#/responses/Created'
-        400:
-          $ref: '#/responses/InvalidInput'
-        401:
-          $ref: '#/responses/Unauthorized'
-        403:
-          $ref: '#/responses/Forbidden'
-        409:
-          $ref: '#/responses/Conflict'
-        500:
-          $ref: '#/responses/ServerError'
-    get:
-      tags:
-        - me
-      summary: Get user's answered challenges.
-      operationId: getAnsweredChallengesOfLoggedInUser
-      description: >
-        Get previously answered challenge(s) in the system by the authenticated user.
-
-          <b>Permission required:</b>
-           * /permission/admin/login
-      responses:
-        200:
-          description: Array of Challenge(s) that are already answered by the authenticated user.
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/UserChallengeAnswerResponse'
-        401:
-          $ref: '#/responses/Unauthorized'
-        403:
-          $ref: '#/responses/Forbidden'
-        500:
-          $ref: '#/responses/ServerError'
-    put:
-      tags:
-        - me
-      summary: Answer new challenge question combination over existing answers.
-      operationId: updateChallengeAnswersOfLoggedInUser
-      description: |
-        Overrides the *already answered challenges* in the system with a set of *new challenge question answers* for logged In user. A user can pick at maximum one question from each set to answer. A user may answer **one or more distinct** challenge question **sets**.
-
-        <b>Permission required:</b>
-         * /permission/admin/login
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+  /{proxy+}:
+    options:
       parameters:
-        - in: body
-          name: challengeAnswers
-          description: Set of challenges with answer.
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/ChallengeAnswer'
+      - name: "proxy"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
       responses:
-        200:
-          $ref: '#/responses/OK'
-        400:
-          $ref: '#/responses/InvalidInput'
-        401:
-          $ref: '#/responses/Unauthorized'
-        403:
-          $ref: '#/responses/Forbidden'
-        404:
-          $ref: '#/responses/NotFound'
-        500:
-          $ref: '#/responses/ServerError'
-    delete:
-      tags:
-        - me
-      summary: Remove challenge question answers.
-      operationId: deleteChallengeAnswersOfLoggedInUser
-      description: |
-        Removes all the existing challenge answers of the authenticated user.
-
-        <b>Permission required:</b>
-         * /permission/admin/login
-      responses:
-        204:
-          $ref: '#/responses/NoContent'
-        401:
-          $ref: '#/responses/Unauthorized'
-        403:
-          $ref: '#/responses/Forbidden'
-        404:
-          $ref: '#/responses/NotFound'
-        500:
-          $ref: '#/responses/ServerError'
-  /me/challenge-answers/{challenge-set-id}:
-    post:
-      tags:
-        - me
-      summary: Answers a specific new challenge.
-      operationId: addChallengeAnswerOfLoggedInUser
-      description: |
-        Provide an **answer** to **a specific challenge** in the system for a logged in user. The user can at the most select one question from a challenge set of interest.
-
-        <b>Permission required:</b>
-         * /permission/admin/login
+        "200":
+          description: "200 response"
+          headers:
+            Access-Control-Allow-Origin:
+              schema:
+                type: "string"
+            Access-Control-Allow-Methods:
+              schema:
+                type: "string"
+            Access-Control-Allow-Headers:
+              schema:
+                type: "string"
+          content: {}
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: "200"
+            responseParameters:
+              method.response.header.Access-Control-Allow-Methods: "'*'"
+              method.response.header.Access-Control-Allow-Headers: "'*'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            responseTemplates:
+              application/json: "{}\n"
+        requestTemplates:
+          application/json: "{\n  \"statusCode\" : 200\n}\n"
+        passthroughBehavior: "when_no_match"
+        type: "mock"
+    x-amazon-apigateway-any-method:
       parameters:
-        - $ref: '#/parameters/questionSetIdPathParam'
-        - in: body
-          name: challengeAnswer
-          description: The answer to the challenge along with the question.
-          schema:
-            $ref: '#/definitions/UserChallengeAnswer'
-      responses:
-        201:
-          $ref: '#/responses/Created'
-        400:
-          $ref: '#/responses/InvalidInput'
-        401:
-          $ref: '#/responses/Unauthorized'
-        403:
-          $ref: '#/responses/Forbidden'
-        404:
-          $ref: '#/responses/NotFound'
-        409:
-          $ref: '#/responses/Conflict'
-        500:
-          $ref: '#/responses/ServerError'
-    put:
-      tags:
-        - me
-      summary: Update the challenge answer of an already answered challenge.
-      operationId: updateChallengeAnswerOfLoggedInUser
-      description: |
-        Update a challenge answer in a specific challenge for an authenticated user.
-
-        <b>Permission required:</b>
-         * /permission/admin/login
-      parameters:
-        - $ref: '#/parameters/questionSetIdPathParam'
-        - in: body
-          name: challenge-answer
-          description: The challenge answer with the challenge-question.
-          schema:
-           $ref: '#/definitions/UserChallengeAnswer'
-      responses:
-        200:
-          $ref: '#/responses/OK'
-        400:
-          $ref: '#/responses/InvalidInput'
-        401:
-          $ref: '#/responses/Unauthorized'
-        403:
-          $ref: '#/responses/Forbidden'
-        404:
-          $ref: '#/responses/NotFound'
-        500:
-          $ref: '#/responses/ServerError'
-    delete:
-      tags:
-        - me
-      summary: Remove a challenge question answer.
-      operationId: deleteChallengeAnswerOfLoggedInUser
-      description: |
-        Removes existing answer provided by the authenticated user to a specific challenge.
-
-        <b>Permission required:</b>
-         * /permission/admin/login
-      parameters:
-        - $ref: '#/parameters/questionSetIdPathParam'
-      responses:
-        204:
-          $ref: '#/responses/NoContent'
-        401:
-          $ref: '#/responses/Unauthorized'
-        403:
-          $ref: '#/responses/Forbidden'
-        404:
-          $ref: '#/responses/NotFound'
-        500:
-          $ref: '#/responses/ServerError'
-
-parameters:
-    usernamePathParams:
-      in: path
-      name: user-id
-      required: true
-      type: string
-      description: Uniquely identifiable user ID
-    questionSetIdPathParam:
-      in: path
-      name: challenge-set-id
-      required: true
-      type: string
-      description: Challenge Question Set ID
-    questionIdPathParam:
-      in: path
-      name: question-id
-      required: true
-      type: string
-      description: Challenge Question ID
-    localeQueryParam:
-      in: query
-      name: locale
-      description: An optional search string for looking up challenge-questions based on locale
-      required: false
-      type: string
-    offsetQueryParam:
-      in: query
-      name: offset
-      description: Number of records to skip for pagination. _*This filtering is not yet supported._
-      type: integer
-      format: int32
-      minimum: 0
-    limitQueryParam:
-      in: query
-      name: limit
-      description: Maximum number of records to return. _*This filtering is not yet supported._
-      type: integer
-      format: int32
-      minimum: 0
-definitions:
-    #-----------------------------------------------------
-    # ChallengeSet Properties object
-    #-----------------------------------------------------
-  ChallengeSet:
-    type: object
-    required:
-      - challengeSetId
-      - questions
-    properties:
-      questionSetId:
-        type: string
-        example: challengeQuestion1
-        description: A unique ID for the challenge set.
-      questions:
-        type: array
-        description: Challenge questions for the set.
-        items:
-          $ref: '#/definitions/ChallengeQuestion'
-  #-----------------------------------------------------
-  # ChallengeQuestion Properties object
-  #-----------------------------------------------------
-  ChallengeQuestion:
-    type: object
-    required:
-      - question
-    properties:
-      locale:
-        type: string
-        example: en_US
-        description: The locale of the question.
-      question:
-        type: string
-        example: What is your favorite travel destination ?
-        description: Challenge question display value.
-      questionId:
-        type: string
-        example: question1
-        description: A unique ID for the challenge quesion within the set.
-  #-----------------------------------------------------
-  # ChallengeAnswer Properties object
-  #-----------------------------------------------------
-  ChallengeAnswer:
-    type: object
-    required:
-      - answer
-      - challenge
-    properties:
-      questionSetId:
-        type: string
-        example: challengeQuestionSet1
-        description: A unique ID to identify the challenge set.
-      challengeQuestion:
-          $ref: '#/definitions/ChallengeQuestion'
-          description: A challenge question that is selected to answer from the set.
-      answer:
-        type: string
-        example: Colombo
-        description: Answer to the challenge question.
-  #-----------------------------------------------------
-  # UserChallengeAnswer Properties object
-  #-----------------------------------------------------
-  UserChallengeAnswer:
-    type: object
-    required:
-      - answer
-      - challenge
-    properties:
-      challengeQuestion:
-          $ref: '#/definitions/ChallengeQuestion'
-      answer:
-        type: string
-        example: Colombo
-  #-----------------------------------------------------
-  # UserChallengeAnswerResponse Properties object
-  #-----------------------------------------------------
-  UserChallengeAnswerResponse:
-    type: object
-    required:
-      - answer
-      - questionSetId
-      - question
-    properties:
-      questionSetId:
-        type: string
-        example: challengeQuestionSet1
-        description: A unique ID to identify the challenge set.
-      question:
-        type: string
-        example: What is your favorite travel destination ?
-        description: Challenge question display value.
-      answer:
-        type: string
-        example: Ro83J+wm/zkUt2/6GDf+xZD8s/2pjPqTUhrkOrwGBb4=
-        description: A hashed value of the challenge answer.
-  #-----------------------------------------------------
-  # The Error Response  object
-  #-----------------------------------------------------
-  Error:
-    type: object
-    required:
-      - code
-      - message
-    properties:
-      code:
-        type: string
-        example: "some_error_code"
-      message:
-        type: string
-        example: "Some Error Message"
-      description:
-        type: string
-        example: "Some Error Description"
-      traceId:
-        type: string
-        example: "Some Correlation for Error Instance"
-securityDefinitions:
-  BasicAuth:
-    type: basic
-  OAuth2:
-    type: oauth2
-    flow: accessCode
-    authorizationUrl: https://localhost:9443/oauth2/authorize
-    tokenUrl: https://localhost:9443/oauth2/token
-#-----------------------------------------------------
-# Descriptions of common responses
-#-----------------------------------------------------
-responses:
-  NotFound:
-    description: The specified resource is not found
-    schema:
-      $ref: '#/definitions/Error'
-  Unauthorized:
-    description: Unauthorized
-  ServerError:
-    description: Internal Server Error
-    schema:
-      $ref: '#/definitions/Error'
-  InvalidInput:
-    description: Invalid input request
-    schema:
-      $ref: '#/definitions/Error'
-  Conflict:
-    description: Element Already Exists
-    schema:
-      $ref: '#/definitions/Error'
-  Created:
-    description: Item Created
-  OK:
-    description: OK
-  NoContent:
-    description: No Content
-  Forbidden:
-    description: Resource Forbidden
-
-host: localhost:9443
-basePath: /t/carbon.super/api/users/v1
+      - name: "proxy"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-west-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-west-1:606438480380:function:be-entity-app-staging-BeEntity-4029OOHZD7O1/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
+components: {}
+x-amazon-apigateway-policy:
+  Version: "2012-10-17"
+  Statement:
+  - Effect: "Deny"
+    Principal: "*"
+    Action: "execute-api:Invoke"
+    Resource: "arn:aws:execute-api:eu-west-1:606438480380:*/*"
+    Condition:
+      StringNotEquals:
+        aws:sourceVpce:
+        - "vpce-0fd1bf3137ada5ed3"
+        - "vpce-0fedcb921d5cdbbb7"
+        - "vpce-071cf648ed1871407"
+        - "vpce-0108cea8d78c6ef3d"
+        - "vpce-033034da2c4fa0ceb"
+        - "vpce-06f6f62627969466a"
+        - "vpce-052a4c0b6018dbc5c"
+        - "vpce-005ec66c65a1e70e8"
+        - "vpce-012f6de9a34294b1e"
+        - "vpce-0e0c304f63abd6e2e"
+        - "vpce-0cbf8f57ac887ba22"
+        - "vpce-037729e8a4c43bcf7"
+        - "vpce-0e42c3502868212d2"
+        - "vpce-0864f192143fecb61"
+        - "vpce-06412274aeb74714e"
+        - "vpce-09b5fccd4e984c23e"
+        - "vpce-0431c37f200f5fc56"
+        - "vpce-0330021fa22a39359"
+        - "vpce-031b1764bdc3a5913"
+        - "vpce-03667a3f16b6d20e2"
+        - "vpce-0ac68e20a4834acfa"
+        - "vpce-05e449a71dd61d946"
+  - Effect: "Allow"
+    Principal: "*"
+    Action: "execute-api:Invoke"
+    Resource: "arn:aws:execute-api:eu-west-1:606438480380:*/*"
+    Condition:
+      StringEquals:
+        aws:sourceVpce:
+        - "vpce-0fd1bf3137ada5ed3"
+        - "vpce-0fedcb921d5cdbbb7"
+        - "vpce-071cf648ed1871407"
+        - "vpce-0108cea8d78c6ef3d"
+        - "vpce-033034da2c4fa0ceb"
+        - "vpce-06f6f62627969466a"
+        - "vpce-052a4c0b6018dbc5c"
+        - "vpce-005ec66c65a1e70e8"
+        - "vpce-012f6de9a34294b1e"
+        - "vpce-0e0c304f63abd6e2e"
+        - "vpce-0cbf8f57ac887ba22"
+        - "vpce-037729e8a4c43bcf7"
+        - "vpce-0e42c3502868212d2"
+        - "vpce-0864f192143fecb61"
+        - "vpce-06412274aeb74714e"
+        - "vpce-09b5fccd4e984c23e"
+        - "vpce-0431c37f200f5fc56"
+        - "vpce-0330021fa22a39359"
+        - "vpce-031b1764bdc3a5913"
+        - "vpce-03667a3f16b6d20e2"
+        - "vpce-0ac68e20a4834acfa"
+        - "vpce-05e449a71dd61d946"
